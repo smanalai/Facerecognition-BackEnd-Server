@@ -3,6 +3,13 @@ const bodyParser = require('body-parser');
 const bcrypt = require('bcrypt-nodejs');
 const cors = require('cors');
 const knex = require('knex');
+const Clarifai = require('clarifai');
+
+
+const url = new Clarifai.App({
+  apiKey: '25dabbe2a6864ff096f28c9634ec7f10'
+});
+
 
 const db =  knex({
   client: 'pg',
@@ -57,13 +64,17 @@ app.get('/', (req, res)=> {
 })
 
 app.post('/signin', (req, res) => {
+	const {email, password} = req.body;
+	if(!email || !password){
+		return res.status(400).json('incorrect form submission');
+	}
 	db.select('email', 'hash').from('login')
-	.where('email', '=', req.body.email)
+	.where('email', '=', email)
 	.then(data => {
-		const isValid = bcrypt.compareSync(req.body.password, data[0].hash);
+		const isValid = bcrypt.compareSync(password, data[0].hash);
 		if (isValid){
 			return db.select('*').from('users')
-			  .where('email', '=', req.body.email)
+			  .where('email', '=', email)
 			  .then(user => {
 					res.json(user[0])
 				})
@@ -78,6 +89,9 @@ app.post('/signin', (req, res) => {
 
 app.post('/register', (req, res) => {
 	const {email, name, password} = req.body;
+	if(!email || !name || !password){
+		return res.status(400).json('incorrect form submission');
+	}
 	const hash = bcrypt.hashSync(password);
 	db.transaction(trx => {
 		trx.insert({
@@ -132,8 +146,13 @@ app.put('/image', (req, res) => {
 })
 
 
-
-
+app.post('/imageurl', (req, res) => {
+	url.models.predict(Clarifai.FACE_DETECT_MODEL, req.body.input)
+	.then(data => {
+		res.json(data);
+	})
+	.catch(err => res.status(400).json('unable to work with API'))
+})
 
 
 app.listen(3000, ()=> {
