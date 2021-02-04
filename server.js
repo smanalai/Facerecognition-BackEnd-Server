@@ -6,9 +6,7 @@ const knex = require('knex');
 const Clarifai = require('clarifai');
 
 
-const url = new Clarifai.App({
-  apiKey: '25dabbe2a6864ff096f28c9634ec7f10'
-});
+
 
 
 const db =  knex({
@@ -115,14 +113,6 @@ app.put('/image', (req, res) => {
 	.catch(err => res.status(400).json('unable to get entries'))
 })
 
-
-app.post('/imageurl', (req, res) => {
-	url.models.predict(Clarifai.FACE_DETECT_MODEL, req.body.input)
-	.then(data => {
-		res.json(data);
-	})
-	.catch(err => res.status(400).json('unable to work with API'))
-})
 
 
 app.listen(process.env.PORT || 3000, ()=> {
