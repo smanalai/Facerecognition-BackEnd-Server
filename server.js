@@ -14,10 +14,8 @@ const url = new Clarifai.App({
 const db =  knex({
   client: 'pg',
   connection: {
-    host : '127.0.0.1',
-    user : 'postgres',
-    password : 'test123',
-    database : 'face_recognition_database'
+    connectionString : process.env.DATABASE_URL,
+    ssl:true,
   }
 });
 
