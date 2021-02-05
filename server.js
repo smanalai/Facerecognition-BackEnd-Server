@@ -7,8 +7,6 @@ const Clarifai = require('clarifai');
 
 
 
-
-
 const db =  knex({
   client: 'pg',
   connection: {
@@ -28,7 +26,7 @@ app.use(cors());
 
 
 app.get('/', (req, res)=> {
-	res.send('it is working!');
+	res.send('This is working');
 })
 
 app.post('/signin', (req, res) => {
@@ -61,28 +59,28 @@ app.post('/register', (req, res) => {
 		return res.status(400).json('incorrect form submission');
 	}
 	const hash = bcrypt.hashSync(password);
-	db.transaction(trx => {
-		trx.insert({
-			hash: hash,
-			email: email
-		})
-		.into('login')
-		.returning('email')
-		.then(loginemail => {
-			return trx('users')
-				.returning('*')
-				.insert({
-					email: loginemail[0],
-					name: name,
-					joined: new Date()
-				}).then(user =>{
-					res.json(user[0]);
-		})
+		db.transaction(trx => {
+			trx.insert({
+				hash: hash,
+				email: email
+			})
+			.into('login')
+			.returning('email')
+			.then(loginemail => {
+				return trx('users')
+					.returning('*')
+					.insert({
+						email: loginemail[0],
+						name: name,
+						joined: new Date()
+					}).then(user =>{
+						res.json(user[0]);
+			})
 
+			})
+			.then(trx.commit)
+			.catch(trx.rollback)
 		})
-		.then(trx.commit)
-		.catch(trx.rollback)
-	})
 	
 	.catch(err => res.status(400).json('Unable to register'))
 	
@@ -103,10 +101,10 @@ app.get('/profile/:id', (req, res) => {
 })
 
 app.put('/image', (req, res) => {
-	const {id} = req.body;
+	const {id, faceNum} = req.body;
 	db('users').where('id', '=', id)
 	.increment('entries', 1)
-	.returning('entries')
+	.returning('entries', faceNum)
 	.then(entries => {
 		res.json(entries[0]);
 	})
@@ -114,17 +112,6 @@ app.put('/image', (req, res) => {
 })
 
 
-
 app.listen(process.env.PORT || 3000, ()=> {
-	console.log(`App is running on port ${process.env.PORT}`)
+  console.log(`App is running on port ${process.env.PORT}`)
 });
-
-
-/*
-/ --> res = this is working
-/signin --> POST = success/fail
-/register -- POST = user
-/ profile/:userId --> GET = user
-/image --> PUT --> user
-
-*/
